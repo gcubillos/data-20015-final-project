@@ -1,6 +1,10 @@
 # Technology news summarizer
-from nltk.tokenize import sent_tokenize
+import math
+import random
+
+from nltk.tokenize import sent_tokenize, word_tokenize
 import os
+import numpy as np
 
 # Idea to extract all the relevant material from the news article
 # Setting the path for the data
@@ -25,33 +29,49 @@ def summarizer(p_text: str):
     print('the partitioned text', partitioned_text)
     # Variable where the summarized text will be stored
     summarized_text = []
-    # Variable to store the title
-    title = []
-    # Variable to store the leading sentence. The sentence that goes below the title. I believe it contains important
-    # information
-    leading_sentence = []
-    # Partitioning the text into paragraphs. A paragraph is considered to have more than one sentence
+    # Partitioning the text into paragraphs. A paragraph is considered to have more than one sentence.
+    # Nevertheless, the first two elements of the array will contain the title and leading sentence of the article. The
+    # leading sentence is that that goes belowe the title
     paragraph_text = []
     for i, v in enumerate(partitioned_text):
         tokenized_segment = sent_tokenize(v)
-        print('the i value', i, 'the tokenized segment', tokenized_segment)
-        # Assumes title is first string of the text
+        # Assumes title is first string of the text.
         if i == 0:
-            title = tokenized_segment
+            paragraph_text.append(tokenized_segment)
         elif len(tokenized_segment) > 1:
             paragraph_text.append(tokenized_segment)
         # Checking for the leading sentence
         elif i == 1:
-            leading_sentence = tokenized_segment
+            paragraph_text.append(tokenized_segment)
 
-    # TODO: Extracting the first 20% percent (hoping that pareto works here) of paragraphs of the text.
-    first_paragraph = paragraph_text[0]
-    last_paragraph = paragraph_text[len(paragraph_text) - 1]
-    print('the title', title)
-    print('the leading sentence', leading_sentence)
-    print('the first paragraph', first_paragraph)
-    print('the last paragraph', last_paragraph)
+    print('the paragraph text length', len(paragraph_text))
+    # Extracting the first 20% percent (hoping that pareto principle works here) of paragraphs of the text.
+    # Additionally, it also takes the first two elements of the array, that are assumed to correspond to the title and
+    # the title and leading sentence
+    number_of_paragraphs = math.floor((len(paragraph_text) - 2) * 0.2) + 2
+    print('number of paragraphs', number_of_paragraphs)
+    # Reducing number of paragraphs to analyze
+    paragraph_text = paragraph_text[0:number_of_paragraphs]
+    print('the paragraph text', paragraph_text)
+
+    # Trying to remove redundant details in the remaining sentences
+    # Passing the remaining elements through a pipeline to be able to understand more about the structure of the data
+    # It can help to remove parenthesized elements that include further details, but are not deemed necessary for the
+    # summary
+    # Tokenizing the words
+    # Variable where the tokenized text will be stored
+    tokenized_text = []
+    for paragraph in paragraph_text:
+        print('the paragraph', paragraph)
+        for sent in paragraph:
+            print('the sentence', sent)
+            tokenized_text.append(word_tokenize(sent))
+
+    # Doing POS tagging to the remaining text. To gain more information about the structure of the text
+    return tokenized_text
 
 
 # Trying out the summarizer on the first text
-summarizer(texts_read[0])
+the_text = summarizer(texts_read[0])
+# Trying out the summarizer on a random text
+random_text = summarizer(random.choice(texts_read))

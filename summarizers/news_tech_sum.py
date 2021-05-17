@@ -3,6 +3,7 @@ import math
 import random
 
 from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.tag import pos_tag
 import os
 import numpy as np
 
@@ -68,7 +69,12 @@ def summarizer(p_text: str):
             tokenized_text.append(word_tokenize(sent))
 
     # Doing POS tagging to the remaining text. To gain more information about the structure of the text
-    return tokenized_text
+    # Variable where the POS tagged text will be stored
+    pos_text = []
+    for sent in tokenized_text:
+        pos_text.append(pos_tag(sent))
+
+    return pos_text
 
 
 # Trying out the summarizer on the first text

@@ -1,6 +1,7 @@
 # Technology news summarizer
 import math
 import random
+import stanza
 
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.tag import pos_tag

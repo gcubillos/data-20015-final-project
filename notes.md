@@ -1,0 +1,1 @@
+https://downloads.cs.stanford.edu/nlp/software/dependencies_manual.pdf

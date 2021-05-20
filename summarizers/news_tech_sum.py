@@ -2,12 +2,15 @@
 import math
 import random
 import stanza
+from stanza.server import CoreNLPClient
 
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.tag import pos_tag
 import os
 import numpy as np
 
+# Installing coreNLP if it is not installed
+stanza.install_corenlp()
 # Idea to extract all the relevant material from the news article
 # Setting the path for the data
 input_dir = '../data/texts/bbc-fulltext/bbc/tech'
@@ -75,6 +78,9 @@ def summarizer(p_text: str):
     for sent in tokenized_text:
         pos_text.append(pos_tag(sent))
 
+    # Doing the syntactic parsing of the sentence
+
+
     return pos_text
 
 
@@ -82,3 +88,11 @@ def summarizer(p_text: str):
 the_text = summarizer(texts_read[0])
 # Trying out the summarizer on a random text
 random_text = summarizer(random.choice(texts_read))
+
+# Trying out CoreNLP as a client-server
+text = "Chris Manning is a nice person. Chris wrote a simple sentence. He also gives oranges to people."
+with CoreNLPClient(
+        annotators=['tokenize','ssplit','pos','lemma','ner', 'parse', 'depparse','coref'],
+        timeout=30000,
+        memory='16G') as client:
+    ann = client.annotate(text)

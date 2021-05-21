@@ -23,7 +23,11 @@ for f in os.listdir(input_dir):
     with open(os.path.join(input_dir, f)) as text:
         texts_read.append(text.read())
 
-
+# Setting up the constituency parser
+client = CoreNLPClient(
+        annotators=['parse'],
+        timeout=30000,
+        memory='16G')
 # Summarizer of tech texts
 # Receives the string of the article
 # Taking into account what was found in news articles, that the most important information is found at the top of the
@@ -82,33 +86,30 @@ def summarizer(p_text: str):
 
     # Doing the syntactic parsing of the sentence
 
-
-    return pos_text
+    client.annotate()
+    return pos_text, tokenized_text, paragraph_text
 
 
 # Trying out the summarizer on the first text
-the_text = summarizer(texts_read[0])
+the_text = [summarizer(texts_read[0])]
 # Trying out the summarizer on a random text
-random_text = summarizer(random.choice(texts_read))
+random_text = [summarizer(random.choice(texts_read))]
 
 # Trying out stanza as annotation
-text = "The Kyrgyz Republic, a small, mountainous state of the former Soviet republic, is using invisible ink and " \
-       "ultraviolet readers in the country's elections as part of a drive to prevent multiple voting. "
-with CoreNLPClient(
-        annotators=['tokenize','ssplit','pos','lemma','ner', 'parse', 'depparse','coref'],
-        timeout=30000,
-        memory='16G') as client:
-    # Submit request to the server
-    ann = client.annotate(text)
-    # Get first sentence
-    sentence = ann.sentence[0]
-    # get the constituency parse of the first sentence
-    print('---')
-    print('constituency parse of first sentence')
-    constituency_parse = sentence.parseTree
-    print(constituency_parse)
+# text = "The Kyrgyz Republic, a small, mountainous state of the former Soviet republic, is using invisible ink and " \
+#        "ultraviolet readers in the country's elections as part of a drive to prevent multiple voting. "
 
-    # get the first subtree of the constituency parse
-    print('---')
-    print('first subtree of constituency parse')
-    print(constituency_parse.child[0])
+# # Submit request to the server
+# ann = client.annotate(text)
+# # Get first sentence
+# sentence = ann.sentence[0]
+# # get the constituency parse of the first sentence
+# print('---')
+# print('constituency parse of first sentence')
+# constituency_parse = sentence.parseTree
+# print(constituency_parse)
+#
+# # get the first subtree of the constituency parse
+# print('---')
+# print('first subtree of constituency parse')
+# print(constituency_parse.child[0])

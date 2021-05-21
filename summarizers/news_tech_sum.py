@@ -2,15 +2,17 @@
 import math
 import random
 import stanza
-from stanza.server import CoreNLPClient
 
+from stanza.server import CoreNLPClient
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.tag import pos_tag
 import os
 import numpy as np
 
-# Installing coreNLP if it is not installed
-stanza.install_corenlp()
+# Installing stanza if it isn't installed yet
+# stanza.install_corenlp()
+# Installing the English model if it hasn't been installed
+# stanza.download_corenlp_models(model='english', version='4.1.0', dir="YOUR_CORENLP_FOLDER")
 # Idea to extract all the relevant material from the news article
 # Setting the path for the data
 input_dir = '../data/texts/bbc-fulltext/bbc/tech'
@@ -89,10 +91,24 @@ the_text = summarizer(texts_read[0])
 # Trying out the summarizer on a random text
 random_text = summarizer(random.choice(texts_read))
 
-# Trying out CoreNLP as a client-server
-text = "Chris Manning is a nice person. Chris wrote a simple sentence. He also gives oranges to people."
+# Trying out stanza as annotation
+text = "The Kyrgyz Republic, a small, mountainous state of the former Soviet republic, is using invisible ink and " \
+       "ultraviolet readers in the country's elections as part of a drive to prevent multiple voting. "
 with CoreNLPClient(
         annotators=['tokenize','ssplit','pos','lemma','ner', 'parse', 'depparse','coref'],
         timeout=30000,
         memory='16G') as client:
+    # Submit request to the server
     ann = client.annotate(text)
+    # Get first sentence
+    sentence = ann.sentence[0]
+    # get the constituency parse of the first sentence
+    print('---')
+    print('constituency parse of first sentence')
+    constituency_parse = sentence.parseTree
+    print(constituency_parse)
+
+    # get the first subtree of the constituency parse
+    print('---')
+    print('first subtree of constituency parse')
+    print(constituency_parse.child[0])

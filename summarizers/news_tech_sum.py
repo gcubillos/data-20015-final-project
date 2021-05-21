@@ -25,9 +25,11 @@ for f in os.listdir(input_dir):
 
 # Setting up the constituency parser
 client = CoreNLPClient(
-        annotators=['parse'],
-        timeout=30000,
-        memory='16G')
+    annotators=['parse'],
+    timeout=30000,
+    memory='16G')
+
+
 # Summarizer of tech texts
 # Receives the string of the article
 # Taking into account what was found in news articles, that the most important information is found at the top of the
@@ -68,26 +70,38 @@ def summarizer(p_text: str):
     # Trying to remove redundant details in the remaining sentences
     # Passing the remaining elements through a pipeline to be able to understand more about the structure of the data
     # It can help to remove parenthesized elements that include further details, but are not deemed necessary for the
-    # summary
+    # summary. The idea is to keep the most relevant elements from the sentence.
+    # Just the constituency parsing will be done.
     # Tokenizing the words
-    # Variable where the tokenized text will be stored
-    tokenized_text = []
+    # Variable where the parsed text will be stored
+    parsed_text = []
     for paragraph in paragraph_text:
         print('the paragraph', paragraph)
         for sent in paragraph:
             print('the sentence', sent)
-            tokenized_text.append(word_tokenize(sent))
+            # Doing the constituency parsing of the sentence
+            processed_sentence = parsing_text(sent)
+            parsed_text.append(processed_sentence)
 
-    # Doing POS tagging to the remaining text. To gain more information about the structure of the text
-    # Variable where the POS tagged text will be stored
-    pos_text = []
-    for sent in tokenized_text:
-        pos_text.append(pos_tag(sent))
+    return parsed_text, paragraph_text
 
-    # Doing the syntactic parsing of the sentence
 
-    client.annotate()
-    return pos_text, tokenized_text, paragraph_text
+# With the constituency parsing the idea is to keep the essential elements of the sentence. The idea that is being
+# tried to transmit
+# The method receives a sentence and returns the first NP and VP of each sentence
+def parsing_text(p_sent: str):
+    # Variable where the processed sentence will be stored
+    processed_sentence = ""
+    # Getting the constituency parse of the sentence
+    current_sentence = client.annotate(p_sent).sentence[0]
+    print('the current sentence', current_sentence)
+    # Processing the constituency parse of the sentence
+    parse_tree = current_sentence.parseTree
+    for sent in parse_tree:
+        # Traversing the tree
+        pass
+
+    return processed_sentence
 
 
 # Trying out the summarizer on the first text

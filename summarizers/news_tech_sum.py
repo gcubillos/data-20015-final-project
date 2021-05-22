@@ -97,11 +97,53 @@ def parsing_text(p_sent: str):
     print('the current sentence', current_sentence)
     # Processing the constituency parse of the sentence
     parse_tree = current_sentence.parseTree
-    for sent in parse_tree:
-        # Traversing the tree
-        pass
+    finished_processing = False
+    while not finished_processing:
+        current_node = parse_tree
+        # Traversing the tree to find the first NP, which will be included in the summary
+        try:
+            current_node.child[0].value
+        except TypeError:
+            pass
 
     return processed_sentence
+
+
+# Checking whether it has a NP
+# The node is taken as input. Also empty array that will contain both the remaining noun phrases and verb phrases
+def processing_node(p_node, p_np, p_vp):
+    # Variable where the final extracted sentence will be stored
+    final_sentence = None
+    num_children = len(p_node)
+    for i in range(num_children):
+        # Is the child a NP?
+        if p_node.child[i].value == 'NP' and not p_np:
+            p_np = finding_np(p_node.child[i], p_np, p_vp)
+        elif p_node.child[i].value == 'VP' and not p_vp:
+            p_vp = finding_vp(p_node.child[i], p_np, p_vp)
+
+    return final_sentence
+
+
+# Method that finds the first np
+def finding_np(p_node, p_np, p_vp):
+    num_children = len(p_node)
+    for i in range(num_children):
+        # Is the child a NP?
+        if p_node.child[i].value == 'NP' and not p_np:
+            finding_np(p_node.child[i], p_np, p_vp)
+        else:
+            p_np = p_node
+
+    return p_np
+
+
+# Method that processes VP
+def finding_vp(p_node, p_np, p_vp):
+    structure = None
+    found_first_np = False
+    num_children = len(p)
+    return p_vp
 
 
 # Trying out the summarizer on the first text

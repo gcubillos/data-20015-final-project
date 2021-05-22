@@ -98,13 +98,18 @@ def parsing_text(p_sent: str):
     # Processing the constituency parse of the sentence
     parse_tree = current_sentence.parseTree
     finished_processing = False
-    while not finished_processing:
-        current_node = parse_tree
-        # Traversing the tree to find the first NP, which will be included in the summary
-        try:
-            current_node.child[0].value
-        except TypeError:
-            pass
+    # while not finished_processing:
+    #     current_node = parse_tree
+    #     # Traversing the tree to find the first NP, which will be included in the summary
+    #     try:
+    #         current_node.child[0].value
+    #     except TypeError:
+    #         pass
+    # Variable where the noun phrase will be stored
+    np_value = None
+    # Variable where the verb phrase will be stored
+    vp_value = None
+    processing_node(parse_tree, np_value, vp_value)
 
     return processed_sentence
 
@@ -114,7 +119,7 @@ def parsing_text(p_sent: str):
 def processing_node(p_node, p_np, p_vp):
     # Variable where the final extracted sentence will be stored
     final_sentence = None
-    num_children = len(p_node)
+    num_children = len(p_node.child)
     for i in range(num_children):
         # Is the child a NP?
         if p_node.child[i].value == 'NP' and not p_np:
@@ -127,13 +132,19 @@ def processing_node(p_node, p_np, p_vp):
 
 # Method that finds the first np
 def finding_np(p_node, p_np, p_vp):
-    num_children = len(p_node)
+    num_children = len(p_node.child)
+    found_np = False
     for i in range(num_children):
         # Is the child a NP?
-        if p_node.child[i].value == 'NP' and not p_np:
+        # If it is stop looking for other NPs
+        if p_node.child[i].value == 'NP':
             finding_np(p_node.child[i], p_np, p_vp)
-        else:
-            p_np = p_node
+            break
+        if i == num_children - 1:
+            found_np = True
+
+    if found_np:
+        p_np = p_node
 
     return p_np
 
@@ -142,7 +153,7 @@ def finding_np(p_node, p_np, p_vp):
 def finding_vp(p_node, p_np, p_vp):
     structure = None
     found_first_np = False
-    num_children = len(p)
+    num_children = len(p_node.child)
     return p_vp
 
 

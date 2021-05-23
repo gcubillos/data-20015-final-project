@@ -126,6 +126,8 @@ def processing_node(p_node, p_np, p_vp):
             p_np = finding_np(p_node.child[i], p_np, p_vp)
         elif p_node.child[i].value == 'VP' and not p_vp:
             p_vp = finding_vp(p_node.child[i], p_np, p_vp)
+        elif p_node.child[i].value == 'S':
+            processing_node(p_node.child[i], p_np, p_vp)
 
     return final_sentence
 
@@ -151,9 +153,24 @@ def finding_np(p_node, p_np, p_vp):
 
 # Method that processes VP
 def finding_vp(p_node, p_np, p_vp):
-    structure = None
+    # Variable where the resulting vp will be stored
+    structure = []
     found_first_np = False
+    found_first_vp = False
+    # Variable where an np, if there exists one will be stored
+    the_np = None
+    # Variable where the vp will be stored
+    the_vp = None
     num_children = len(p_node.child)
+    for i in range(num_children):
+        if p_node.child[i] == 'NP' and not found_first_np:
+            found_first_np = True
+            the_np = finding_np(p_node.child[i], the_np, the_vp)
+        if p_node.child[i] == 'VP' and not found_first_vp:
+            found_first_vp = True
+            
+        if p_node.child[i] != 'NP' and not found_first_np:
+            structure.append(p_node.child[i])
     return p_vp
 
 

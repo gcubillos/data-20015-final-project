@@ -2,6 +2,7 @@
 import math
 import random
 import stanza
+from stanza.protobuf import CoreNLP_pb2
 
 from stanza.server import CoreNLPClient
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -121,7 +122,7 @@ def parsing_text(p_sent: str):
 # Checking whether it has a NP
 # The node is taken as input. Also empty array that will contain both the remaining noun phrases and verb phrases
 # TODO: Make sure that the methods return what you want them to return and that they properly concatenate the values
-def processing_s(p_node, p_np, p_vp):
+def processing_s(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
     # Variable where the final extracted sentence will be stored
     final_sentence = None
     num_children = len(p_node.child)
@@ -138,28 +139,32 @@ def processing_s(p_node, p_np, p_vp):
 
 
 # Method that finds the first np
-def finding_np(p_node, p_np, p_vp):
-    # Variable where the np tree will be stored
-    np = None
+def finding_np(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
+    # Variable where the np phrase will be stored
+    np = ""
     num_children = len(p_node.child)
     found_np = False
     for i in range(num_children):
         # Is the child a NP?
         # If it is stop looking for other NPs
-        if p_node.child[i].value == 'NP':
-            finding_np(p_node.child[i], p_np, p_vp)
+        if p_node.child[i].value == 'NP' :
+            np += finding_np(p_node.child[i], p_np, p_vp)
+            break
+        # Is the child the sentence
+        elif p_node.child[i].value == 'S':
+            np += finding_np(p_node.child[i], p_np, p_vp)
             break
         if i == num_children - 1:
             found_np = True
 
-    if found_np:
-        np = p_node
+    if found_np and np == "":
+        np = extract_terminal(np)
 
-    return extract_terminal(np)
+    return np
 
 
 # Method that processes VP
-def finding_vp(p_node, p_np, p_vp):
+def finding_vp(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
     found_first_np = False
     found_first_vp = False
     # Variable where an np, if there exists one will be stored
@@ -200,27 +205,23 @@ def extract_terminal(p_tree):
 
 # Trying out the summarizer in a sample sentence
 # TODO: Do simple inputs and outputs with sample sentences of the different methods
-sample_sentence = [summarizer("Ink helps drive democracy in Asia")]
+# Array that contains sample sentences
+sample_sentences = [
+    "Ink helps drive democracy in Asia",
+    "The Kyrgyz Republic, a small, mountainous state of the former Soviet republic, is using invisible ink and "
+    "ultraviolet readers in the country's elections as part of a drive to prevent multiple voting. "
+    ]
+# Annotating the sentences
+parse_01 = client.annotate(sample_sentences[0]).sentence[0].parseTree
+parse_02 = client.annotate(sample_sentences[1]).sentence[0].parseTree
+# Trying out the finding np
+# For the first sentence
+np_01 = ""
+vp_01 = ""
+sum_01 = finding_np(parse_01, np_01, vp_01)
+print('the np for the first sentence is', sum_01)
+# Trying out the finding vp
 # Trying out the summarizer on the first text
-the_text = [summarizer(texts_read[0])]
+# the_text = [summarizer(texts_read[0])]
 # Trying out the summarizer on a random text
-random_text = [summarizer(random.choice(texts_read))]
-
-# Trying out stanza as annotation
-# text = "The Kyrgyz Republic, a small, mountainous state of the former Soviet republic, is using invisible ink and " \
-#        "ultraviolet readers in the country's elections as part of a drive to prevent multiple voting. "
-
-# # Submit request to the server
-# ann = client.annotate(text)
-# # Get first sentence
-# sentence = ann.sentence[0]
-# # get the constituency parse of the first sentence
-# print('---')
-# print('constituency parse of first sentence')
-# constituency_parse = sentence.parseTree
-# print(constituency_parse)
-#
-# # get the first subtree of the constituency parse
-# print('---')
-# print('first subtree of constituency parse')
-# print(constituency_parse.child[0])
+# random_text = [summarizer(random.choice(texts_read))]

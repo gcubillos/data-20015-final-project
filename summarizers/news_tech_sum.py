@@ -5,6 +5,7 @@ import stanza
 
 from stanza.server import CoreNLPClient
 from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.tokenize.treebank import TreebankWordDetokenizer
 from nltk.tag import pos_tag
 import os
 import numpy as np
@@ -28,6 +29,9 @@ client = CoreNLPClient(
     annotators=['parse'],
     timeout=30000,
     memory='16G')
+
+# Initializing the detokenizer
+detokenizer = TreebankWordDetokenizer()
 
 
 # Summarizer of tech texts
@@ -109,14 +113,14 @@ def parsing_text(p_sent: str):
     np_value = None
     # Variable where the verb phrase will be stored
     vp_value = None
-    processing_node(parse_tree, np_value, vp_value)
+    processing_s(parse_tree, np_value, vp_value)
 
     return processed_sentence
 
 
 # Checking whether it has a NP
 # The node is taken as input. Also empty array that will contain both the remaining noun phrases and verb phrases
-def processing_node(p_node, p_np, p_vp):
+def processing_s(p_node, p_np, p_vp):
     # Variable where the final extracted sentence will be stored
     final_sentence = None
     num_children = len(p_node.child)
@@ -127,13 +131,15 @@ def processing_node(p_node, p_np, p_vp):
         elif p_node.child[i].value == 'VP' and not p_vp:
             p_vp = finding_vp(p_node.child[i], p_np, p_vp)
         elif p_node.child[i].value == 'S':
-            processing_node(p_node.child[i], p_np, p_vp)
+            processing_s(p_node.child[i], p_np, p_vp)
 
     return final_sentence
 
 
 # Method that finds the first np
 def finding_np(p_node, p_np, p_vp):
+    # Variable where the np tree will be stored
+    np = None
     num_children = len(p_node.child)
     found_np = False
     for i in range(num_children):
@@ -146,32 +152,47 @@ def finding_np(p_node, p_np, p_vp):
             found_np = True
 
     if found_np:
-        p_np = p_node
+        np = p_node
 
-    return p_np
+    return extract_terminal(np)
 
 
 # Method that processes VP
 def finding_vp(p_node, p_np, p_vp):
-    # Variable where the resulting vp will be stored
-    structure = []
     found_first_np = False
     found_first_vp = False
     # Variable where an np, if there exists one will be stored
-    the_np = None
+    the_np = ""
     # Variable where the vp will be stored
-    the_vp = None
+    the_vp = []
     num_children = len(p_node.child)
     for i in range(num_children):
         if p_node.child[i] == 'NP' and not found_first_np:
             found_first_np = True
-            the_np = finding_np(p_node.child[i], the_np, the_vp)
+            the_np += finding_np(p_node.child[i], the_np, the_vp)
         if p_node.child[i] == 'VP' and not found_first_vp:
             found_first_vp = True
-            
+
         if p_node.child[i] != 'NP' and not found_first_np:
-            structure.append(p_node.child[i])
-    return p_vp
+            the_vp.append(p_node.child[i])
+    return extract_terminal(p_vp)
+
+
+# Method that extracts the terminal elements from the sentences in order to arrive to the final sentence
+def extract_terminal(p_tree):
+    # Phrase where the constituent just in string form will be stored
+    transformed_string = ""
+    if p_tree:
+        # Array where the different tokens will be stored. That will then be detokenized
+        tokens = []
+        # Getting number of children
+        num_children = len(p_tree.child)
+        for i in range(num_children):
+            tokens.append(p_tree.child[i].child[0].value)
+
+        transformed_string = detokenizer.detokenize(tokens)
+        print('transformed string', transformed_string)
+    return transformed_string
 
 
 # Trying out the summarizer on the first text

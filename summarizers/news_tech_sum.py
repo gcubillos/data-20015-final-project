@@ -120,6 +120,7 @@ def parsing_text(p_sent: str):
 
 # Checking whether it has a NP
 # The node is taken as input. Also empty array that will contain both the remaining noun phrases and verb phrases
+# TODO: Make sure that the methods return what you want them to return and that they properly concatenate the values
 def processing_s(p_node, p_np, p_vp):
     # Variable where the final extracted sentence will be stored
     final_sentence = None
@@ -197,6 +198,9 @@ def extract_terminal(p_tree):
     return transformed_string
 
 
+# Trying out the summarizer in a sample sentence
+# TODO: Do simple inputs and outputs with sample sentences of the different methods
+sample_sentence = [summarizer("Ink helps drive democracy in Asia")]
 # Trying out the summarizer on the first text
 the_text = [summarizer(texts_read[0])]
 # Trying out the summarizer on a random text

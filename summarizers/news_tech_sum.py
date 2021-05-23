@@ -164,21 +164,23 @@ def finding_vp(p_node, p_np, p_vp):
     # Variable where an np, if there exists one will be stored
     the_np = ""
     # Variable where the vp will be stored
-    the_vp = []
+    the_vp = ""
     num_children = len(p_node.child)
     for i in range(num_children):
-        if p_node.child[i] == 'NP' and not found_first_np:
+        if p_node.child[i].value == 'NP' and not found_first_np:
             found_first_np = True
             the_np += finding_np(p_node.child[i], the_np, the_vp)
-        if p_node.child[i] == 'VP' and not found_first_vp:
+        elif p_node.child[i].value == 'VP' and not found_first_vp:
             found_first_vp = True
-
-        if p_node.child[i] != 'NP' and not found_first_np:
-            the_vp.append(p_node.child[i])
+            the_vp += finding_vp(p_node.child[i], the_np, the_vp)
+        elif p_node.child[i].value != 'NP' and not found_first_np:
+            # TODO: Not sure if it generalizes well
+            the_vp += p_node.child[i].child[0].value + ' '
     return extract_terminal(p_vp)
 
 
-# Method that extracts the terminal elements from the sentences in order to arrive to the final sentence
+# Method that extracts the terminal elements from the sentences in order to arrive to the final sentence.
+# Extracts if it is a tree
 def extract_terminal(p_tree):
     # Phrase where the constituent just in string form will be stored
     transformed_string = ""

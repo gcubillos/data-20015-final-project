@@ -45,7 +45,7 @@ def summarizer(p_text: str):
     summarized_text = []
     # Partitioning the text into paragraphs. A paragraph is considered to have more than one sentence.
     # Nevertheless, the first two elements of the array will contain the title and leading sentence of the article. The
-    # leading sentence is that that goes belowe the title
+    # leading sentence is that that goes below the title
     paragraph_text = []
     for i, v in enumerate(partitioned_text):
         tokenized_segment = sent_tokenize(v)
@@ -80,8 +80,8 @@ def summarizer(p_text: str):
         print('the paragraph', paragraph)
         for sent in paragraph:
             print('the sentence', sent)
-            # Doing the constituency parsing of the sentence
-            processed_sentence = parsing_text(sent)
+            # Doing the constituency parsing of the sentence and return the first NP and VP
+            processed_sentence = processing_text(sent)
             parsed_text.append(processed_sentence)
 
     return parsed_text, paragraph_text
@@ -90,46 +90,23 @@ def summarizer(p_text: str):
 # With the constituency parsing the idea is to keep the essential elements of the sentence. The idea that is being
 # tried to transmit
 # The method receives a sentence and returns the first NP and VP of each sentence
-def parsing_text(p_sent: str):
-    # Variable where the processed sentence will be stored
-    processed_sentence = ""
+def processing_text(p_sent: str):
     # Getting the constituency parse of the sentence
     current_sentence = client.annotate(p_sent).sentence[0]
     print('the current sentence', current_sentence)
     # Processing the constituency parse of the sentence
     parse_tree = current_sentence.parseTree
-    finished_processing = False
-    # while not finished_processing:
-    #     current_node = parse_tree
-    #     # Traversing the tree to find the first NP, which will be included in the summary
-    #     try:
-    #         current_node.child[0].value
-    #     except TypeError:
-    #         pass
-    # Variable where the noun phrase will be stored
-    np_value = None
-    # Variable where the verb phrase will be stored
-    vp_value = None
-    processing_s(parse_tree, np_value, vp_value)
-
+    # Returning the corresponding np and vp. Variable where the processed sentence will be stored
+    processed_sentence = processing_s(parse_tree)
     return processed_sentence
 
 
 # Checking whether it has a NP
-# The node is taken as input. Also empty array that will contain both the remaining noun phrases and verb phrases
+# The node is taken as input
 # TODO: Make sure that the methods return what you want them to return and that they properly concatenate the values
-def processing_s(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
+def processing_s(p_node: CoreNLP_pb2.ParseTree):
     # Variable where the final extracted sentence will be stored
-    final_sentence = None
-    num_children = len(p_node.child)
-    for i in range(num_children):
-        # Is the child a NP?
-        if p_node.child[i].value == 'NP' and not p_np:
-            p_np = finding_np(p_node.child[i])
-        elif p_node.child[i].value == 'VP' and not p_vp:
-            p_vp = process_vp(p_node.child[i])
-        elif p_node.child[i].value == 'S':
-            processing_s(p_node.child[i], p_np, p_vp)
+    final_sentence = finding_np(p_node) + ' ' + finding_vp(p_node)
 
     return final_sentence
 
@@ -161,7 +138,6 @@ def finding_np(p_node: CoreNLP_pb2.ParseTree):
     return np
 
 
-# TODO: Copy the way to find the np to find the vp. With breaks and everything
 # Method that processes VP
 def process_vp(p_node: CoreNLP_pb2.ParseTree):
     found_first_np = False
@@ -179,8 +155,8 @@ def process_vp(p_node: CoreNLP_pb2.ParseTree):
         elif p_node.child[i].value == 'VP':
             the_vp += process_vp(p_node.child[i])
         # Is the child a sentence
-        elif p_node.child[i].value == 'S' and not found_first_np:
-            the_vp += finding_vp(p_node.child[i])
+        elif p_node.child[i].value == 'S':
+            the_vp += ' ' + finding_vp(p_node.child[i])
         # Adding everything that goes before the first np
         elif p_node.child[i].value != 'NP' and not found_first_np:
             # TODO: Not sure if it generalizes well
@@ -232,8 +208,7 @@ def extract_terminal(p_tree):
     return transformed_string
 
 
-# Trying out the summarizer in a sample sentence
-# TODO: Do simple inputs and outputs with sample sentences of the different methods
+# Trying out the summarizer parts in sample sentences
 # Array that contains sample sentences
 sample_sentences = [
     "Ink helps drive democracy in Asia",
@@ -256,15 +231,14 @@ for sent in sample_sentences:
     # Testing the np function
     current_np = finding_np(current_parse)
     nps.append(current_np)
-    print('the np for the sentence is', current_np)
+    print('the np for the sentence is:', current_np)
     # Testing the vp function
     current_vp = finding_vp(current_parse)
     vps.append(current_vp)
-    print('the vp for the sentence is', current_vp)
-# Trying out the finding vp
+    print('the vp for the sentence is:', current_vp)
 
 
 # Trying out the summarizer on the first text
-# the_text = [summarizer(texts_read[0])]
+the_text = [summarizer(texts_read[0])]
 # Trying out the summarizer on a random text
 # random_text = [summarizer(random.choice(texts_read))]

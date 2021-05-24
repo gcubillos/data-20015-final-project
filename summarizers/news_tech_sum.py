@@ -165,7 +165,6 @@ def finding_np(p_node: CoreNLP_pb2.ParseTree):
 # Method that processes VP
 def process_vp(p_node: CoreNLP_pb2.ParseTree):
     found_first_np = False
-    found_first_vp = False
     # # Variable where an np, if there exists one will be stored
     # the_np = ""
     # Variable where the vp will be stored
@@ -177,12 +176,11 @@ def process_vp(p_node: CoreNLP_pb2.ParseTree):
         if p_node.child[i].value == 'NP' and not found_first_np:
             found_first_np = True
             the_vp += finding_np(p_node.child[i])
-        elif p_node.child[i].value == 'VP' and not found_first_vp:
-            found_first_vp = True
+        elif p_node.child[i].value == 'VP':
             the_vp += process_vp(p_node.child[i])
         # Is the child a sentence
         elif p_node.child[i].value == 'S' and not found_first_np:
-            the_vp += process_vp(p_node.child[i])
+            the_vp += finding_vp(p_node.child[i])
         # Adding everything that goes before the first np
         elif p_node.child[i].value != 'NP' and not found_first_np:
             # TODO: Not sure if it generalizes well
@@ -212,7 +210,7 @@ def finding_vp(p_node: CoreNLP_pb2.ParseTree):
             found_vp = True
 
     if found_vp and vp == "":
-        vp = extract_terminal(p_node)
+        vp += extract_terminal(p_node)
 
     return vp
 
@@ -231,7 +229,6 @@ def extract_terminal(p_tree):
             tokens.append(p_tree.child[i].child[0].value)
 
         transformed_string = detokenizer.detokenize(tokens)
-        print('transformed string', transformed_string)
     return transformed_string
 
 

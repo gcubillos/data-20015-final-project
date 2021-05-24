@@ -1,20 +1,16 @@
 # Technology news summarizer
 import math
-import random
-import stanza
-from stanza.protobuf import CoreNLP_pb2
-
-from stanza.server import CoreNLPClient
-from nltk.tokenize import sent_tokenize, word_tokenize
-from nltk.tokenize.treebank import TreebankWordDetokenizer
-from nltk.tag import pos_tag
 import os
-import numpy as np
+
+from nltk.tokenize import sent_tokenize
+from nltk.tokenize.treebank import TreebankWordDetokenizer
+from stanza.protobuf import CoreNLP_pb2
+from stanza.server import CoreNLPClient
 
 # Installing stanza if it isn't installed yet
 # stanza.install_corenlp()
 # Installing the English model if it hasn't been installed
-# stanza.download_corenlp_models(model='english', version='4.1.0', dir="YOUR_CORENLP_FOLDER")
+# stanza.download_corenlp_models(model='english', version='4.1.0', dir="core_nlp_folder")
 # Idea to extract all the relevant material from the news article
 # Setting the path for the data
 input_dir = '../data/texts/bbc-fulltext/bbc/tech'
@@ -129,9 +125,9 @@ def processing_s(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
     for i in range(num_children):
         # Is the child a NP?
         if p_node.child[i].value == 'NP' and not p_np:
-            p_np = finding_np(p_node.child[i], p_np, p_vp)
+            p_np = finding_np(p_node.child[i])
         elif p_node.child[i].value == 'VP' and not p_vp:
-            p_vp = finding_vp(p_node.child[i], p_np, p_vp)
+            p_vp = process_vp(p_node.child[i])
         elif p_node.child[i].value == 'S':
             processing_s(p_node.child[i], p_np, p_vp)
 
@@ -152,7 +148,7 @@ def finding_np(p_node: CoreNLP_pb2.ParseTree):
         if p_node.child[i].value == 'NP':
             np += finding_np(p_node.child[i])
             break
-        # Is the child the sentence
+        # Is the child a sentence
         elif p_node.child[i].value == 'S':
             np += finding_np(p_node.child[i])
             break
@@ -165,28 +161,60 @@ def finding_np(p_node: CoreNLP_pb2.ParseTree):
     return np
 
 
+# TODO: Copy the way to find the np to find the vp. With breaks and everything
 # Method that processes VP
-def finding_vp(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
+def process_vp(p_node: CoreNLP_pb2.ParseTree):
     found_first_np = False
     found_first_vp = False
-    # Variable where an np, if there exists one will be stored
-    the_np = ""
+    # # Variable where an np, if there exists one will be stored
+    # the_np = ""
     # Variable where the vp will be stored
     the_vp = ""
+    # Variable where the symbols "S" and "VP" will be stored. To make elif shorter
+    symbols = ['S', 'VP']
     num_children = len(p_node.child)
-    # Variable where the 'S' and 'NP' symbols are stored. Just to make the last elif shorter
     for i in range(num_children):
         if p_node.child[i].value == 'NP' and not found_first_np:
             found_first_np = True
-            the_np += finding_np(p_node.child[i], the_np, the_vp)
+            the_vp += finding_np(p_node.child[i])
         elif p_node.child[i].value == 'VP' and not found_first_vp:
             found_first_vp = True
-            the_vp += finding_vp(p_node.child[i], the_np, the_vp)
+            the_vp += process_vp(p_node.child[i])
+        # Is the child a sentence
+        elif p_node.child[i].value == 'S' and not found_first_np:
+            the_vp += process_vp(p_node.child[i])
         # Adding everything that goes before the first np
         elif p_node.child[i].value != 'NP' and not found_first_np:
             # TODO: Not sure if it generalizes well
             the_vp += p_node.child[i].child[0].value + ' '
-    return extract_terminal(p_vp)
+    return the_vp
+
+
+# Method that finds the first vp
+def finding_vp(p_node: CoreNLP_pb2.ParseTree):
+    # Variable where the vp phrase will be stored
+    vp = ""
+    # Variable where the np tree is stored
+    vp_tree = None
+    num_children = len(p_node.child)
+    found_vp = False
+    for i in range(num_children):
+        # Is the child a VP?
+        # If it is stop looking for other VPs
+        if p_node.child[i].value == 'VP':
+            vp += process_vp(p_node.child[i])
+            break
+        # Is the child a sentence
+        elif p_node.child[i].value == 'S':
+            vp += finding_vp(p_node.child[i])
+            break
+        if i == num_children - 1:
+            found_vp = True
+
+    if found_vp and vp == "":
+        vp = extract_terminal(p_node)
+
+    return vp
 
 
 # Method that extracts the terminal elements from the sentences in order to arrive to the final sentence.
@@ -216,7 +244,7 @@ sample_sentences = [
     "ultraviolet readers in the country's elections as part of a drive to prevent multiple voting. ",
     "A US woman is suing Hewlett Packard (HP), saying its printer ink cartridges are secretly programmed to expire on "
     "a certain date. "
-    ]
+]
 # Annotating the sentences. Array of annotations
 parses = []
 # Array that will contain the nps
@@ -233,12 +261,10 @@ for sent in sample_sentences:
     nps.append(current_np)
     print('the np for the sentence is', current_np)
     # Testing the vp function
-    current_vp = finding_vp(current_parse, np_01, vp_01)
+    current_vp = finding_vp(current_parse)
     vps.append(current_vp)
     print('the vp for the sentence is', current_vp)
 # Trying out the finding vp
-
-
 
 
 # Trying out the summarizer on the first text

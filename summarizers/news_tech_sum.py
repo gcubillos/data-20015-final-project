@@ -139,26 +139,28 @@ def processing_s(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
 
 
 # Method that finds the first np
-def finding_np(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
+def finding_np(p_node: CoreNLP_pb2.ParseTree):
     # Variable where the np phrase will be stored
     np = ""
+    # Variable where the np tree is stored
+    np_tree = None
     num_children = len(p_node.child)
     found_np = False
     for i in range(num_children):
         # Is the child a NP?
         # If it is stop looking for other NPs
-        if p_node.child[i].value == 'NP' :
-            np += finding_np(p_node.child[i], p_np, p_vp)
+        if p_node.child[i].value == 'NP':
+            np += finding_np(p_node.child[i])
             break
         # Is the child the sentence
         elif p_node.child[i].value == 'S':
-            np += finding_np(p_node.child[i], p_np, p_vp)
+            np += finding_np(p_node.child[i])
             break
         if i == num_children - 1:
             found_np = True
 
     if found_np and np == "":
-        np = extract_terminal(np)
+        np = extract_terminal(p_node)
 
     return np
 
@@ -172,6 +174,7 @@ def finding_vp(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
     # Variable where the vp will be stored
     the_vp = ""
     num_children = len(p_node.child)
+    # Variable where the 'S' and 'NP' symbols are stored. Just to make the last elif shorter
     for i in range(num_children):
         if p_node.child[i].value == 'NP' and not found_first_np:
             found_first_np = True
@@ -179,6 +182,7 @@ def finding_vp(p_node: CoreNLP_pb2.ParseTree, p_np, p_vp):
         elif p_node.child[i].value == 'VP' and not found_first_vp:
             found_first_vp = True
             the_vp += finding_vp(p_node.child[i], the_np, the_vp)
+        # Adding everything that goes before the first np
         elif p_node.child[i].value != 'NP' and not found_first_np:
             # TODO: Not sure if it generalizes well
             the_vp += p_node.child[i].child[0].value + ' '
@@ -209,18 +213,34 @@ def extract_terminal(p_tree):
 sample_sentences = [
     "Ink helps drive democracy in Asia",
     "The Kyrgyz Republic, a small, mountainous state of the former Soviet republic, is using invisible ink and "
-    "ultraviolet readers in the country's elections as part of a drive to prevent multiple voting. "
+    "ultraviolet readers in the country's elections as part of a drive to prevent multiple voting. ",
+    "A US woman is suing Hewlett Packard (HP), saying its printer ink cartridges are secretly programmed to expire on "
+    "a certain date. "
     ]
-# Annotating the sentences
-parse_01 = client.annotate(sample_sentences[0]).sentence[0].parseTree
-parse_02 = client.annotate(sample_sentences[1]).sentence[0].parseTree
-# Trying out the finding np
-# For the first sentence
-np_01 = ""
-vp_01 = ""
-sum_01 = finding_np(parse_01, np_01, vp_01)
-print('the np for the first sentence is', sum_01)
+# Annotating the sentences. Array of annotations
+parses = []
+# Array that will contain the nps
+nps = []
+# Array that will contain the vps
+vps = []
+for sent in sample_sentences:
+    current_parse = client.annotate(sent).sentence[0].parseTree
+    parses.append(current_parse)
+    np_01 = ""
+    vp_01 = ""
+    # Testing the np function
+    current_np = finding_np(current_parse)
+    nps.append(current_np)
+    print('the np for the sentence is', current_np)
+    # Testing the vp function
+    current_vp = finding_vp(current_parse, np_01, vp_01)
+    vps.append(current_vp)
+    print('the vp for the sentence is', current_vp)
 # Trying out the finding vp
+
+
+
+
 # Trying out the summarizer on the first text
 # the_text = [summarizer(texts_read[0])]
 # Trying out the summarizer on a random text

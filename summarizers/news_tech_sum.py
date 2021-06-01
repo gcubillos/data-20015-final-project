@@ -93,7 +93,7 @@ def summarizer(p_text: str):
 def processing_text(p_sent: str):
     # Getting the constituency parse of the sentence
     current_sentence = client.annotate(p_sent).sentence[0]
-    print('the current sentence', current_sentence)
+    # print('the current sentence', current_sentence)
     # Processing the constituency parse of the sentence
     parse_tree = current_sentence.parseTree
     # Returning the corresponding np and vp. Variable where the processed sentence will be stored
